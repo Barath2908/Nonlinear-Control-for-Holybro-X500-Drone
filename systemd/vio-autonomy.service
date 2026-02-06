@@ -1,0 +1,75 @@
+[Unit]
+Description=Full VIO Autonomy Stack for Holybro X500
+Documentation=https://github.com/yourusername/holybro_x500_autonomy
+After=network.target
+
+# Dependencies
+After=dev-ttyACM0.device
+Wants=dev-ttyACM0.device
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+
+# Environment
+Environment="ROS_DOMAIN_ID=0"
+Environment="RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+Environment="CYCLONEDDS_URI=file:///home/ubuntu/ros2_ws/cyclonedds.xml"
+
+# Working directory
+WorkingDirectory=/home/ubuntu/ros2_ws
+
+# Pre-start checks
+ExecStartPre=/bin/bash -c '\
+    echo "Checking serial port..." && \
+    test -c /dev/ttyACM0 || (echo "Serial port not found!" && exit 1)'
+
+ExecStartPre=/bin/bash -c '\
+    echo "Checking camera device..." && \
+    ls /dev/video* > /dev/null 2>&1 || echo "Warning: No camera devices found"'
+
+# Main command - full stack launch
+ExecStart=/bin/bash -c '\
+    source /opt/ros/humble/setup.bash && \
+    source /home/ubuntu/ros2_ws/install/setup.bash && \
+    ros2 launch vio_mavlink_bridge full_stack.launch.py \
+        vio_source:=t265 \
+        serial_port:=/dev/ttyACM0 \
+        baudrate:=921600 \
+        enable_controller:=false \
+        enable_rviz:=false \
+        log_level:=info'
+
+# Graceful stop
+ExecStop=/bin/bash -c '\
+    source /opt/ros/humble/setup.bash && \
+    ros2 lifecycle set /vio/mavlink_bridge shutdown || true'
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Resource management
+Nice=-15
+CPUWeight=95
+IOWeight=95
+MemoryMax=1G
+
+# Capabilities for real-time priority (optional)
+# AmbientCapabilities=CAP_SYS_NICE
+# NoNewPrivileges=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vio-autonomy
+
+# Timeouts
+TimeoutStartSec=30
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

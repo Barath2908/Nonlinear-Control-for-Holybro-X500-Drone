@@ -1,0 +1,52 @@
+[Unit]
+Description=VIO-MAVLink Bridge for ArduPilot
+Documentation=https://github.com/yourusername/holybro_x500_autonomy
+After=network.target
+
+# Wait for serial port to be available
+After=dev-ttyACM0.device
+Wants=dev-ttyACM0.device
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+
+# Environment
+Environment="ROS_DOMAIN_ID=0"
+Environment="RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+
+# Source ROS 2 and workspace
+ExecStartPre=/bin/bash -c 'source /opt/ros/humble/setup.bash && source /home/ubuntu/ros2_ws/install/setup.bash'
+
+# Main command
+ExecStart=/bin/bash -c '\
+    source /opt/ros/humble/setup.bash && \
+    source /home/ubuntu/ros2_ws/install/setup.bash && \
+    ros2 launch vio_mavlink_bridge mavlink_bridge.launch.py \
+        serial_port:=/dev/ttyACM0 \
+        baudrate:=921600 \
+        log_level:=info'
+
+# Restart policy
+Restart=on-failure
+RestartSec=5
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Resource limits
+Nice=-10
+CPUWeight=90
+IOWeight=90
+MemoryMax=512M
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vio-mavlink-bridge
+
+# Watchdog (optional - requires node to support watchdog)
+# WatchdogSec=10
+
+[Install]
+WantedBy=multi-user.target
