@@ -1,0 +1,118 @@
+# ArduPilot Parameters for VIO-based GPS-Denied Navigation
+# Holybro X500 with Pixhawk 6X
+# Author: Barath Kumar JK
+#
+# USAGE:
+#   mavproxy.py --master=/dev/ttyACM0 --baudrate=921600
+#   MAVPROXY> param load ardupilot_params.param
+#
+# WARNING: Review all parameters before loading!
+#          Incorrect values can cause flyaways or crashes.
+
+# ==================== EKF3 Source Configuration ====================
+# EKF3 Source 1: External Vision (VIO)
+EK3_SRC1_POSXY,6       # ExternalNav for XY position
+EK3_SRC1_VELXY,6       # ExternalNav for XY velocity
+EK3_SRC1_POSZ,1        # Baro for Z position (more reliable indoors)
+EK3_SRC1_VELZ,6        # ExternalNav for Z velocity
+EK3_SRC1_YAW,6         # ExternalNav for yaw
+
+# EKF3 Source 2: Fallback to GPS (if available)
+EK3_SRC2_POSXY,3       # GPS
+EK3_SRC2_VELXY,3       # GPS
+EK3_SRC2_POSZ,1        # Baro
+EK3_SRC2_VELZ,3        # GPS
+EK3_SRC2_YAW,1         # Compass
+
+# EKF3 Source 3: Optical Flow (if available)
+EK3_SRC3_POSXY,0       # None
+EK3_SRC3_VELXY,5       # OpticalFlow
+EK3_SRC3_POSZ,1        # Baro
+EK3_SRC3_VELZ,0        # None
+EK3_SRC3_YAW,1         # Compass
+
+# ==================== Vision Position Configuration ====================
+VISO_TYPE,1            # 1 = MAVLink VISION_POSITION_ESTIMATE
+VISO_DELAY_MS,50       # Vision pipeline delay in milliseconds
+                       # IMPORTANT: Match this to actual VIO latency
+
+# ==================== EKF3 Tuning ====================
+EK3_ENABLE,1           # Enable EKF3
+EK3_IMU_MASK,3         # Use both IMUs if available
+EK3_GPS_TYPE,0         # 0 = Use 3D velocity & 2D position from GPS
+EK3_ALT_M_NSE,2.0      # Altitude noise (increase for indoor)
+
+# External nav noise parameters
+EK3_POSNE_M_NSE,0.5    # Position noise (m) - tune based on VIO quality
+EK3_VELD_M_NSE,0.5     # Velocity down noise (m/s)
+EK3_VELNE_M_NSE,0.3    # Velocity NE noise (m/s)
+
+# ==================== EKF3 Affinity ====================
+# Prefer ExternalNav over GPS when both are available
+EK3_SRC_OPTIONS,0      # 0 = use all configured sources
+
+# ==================== GPS Configuration ====================
+GPS_TYPE,0             # 0 = None (GPS-denied)
+                       # Set to 1 if GPS is present but not primary
+
+# ==================== Compass Configuration ====================
+# Indoor environments often have magnetic interference
+COMPASS_USE,0          # Disable compass if interference is severe
+COMPASS_USE2,0
+COMPASS_USE3,0
+# Or enable but increase noise:
+# COMPASS_USE,1
+# EK3_MAG_M_NSE,0.1
+
+# ==================== Arming Checks ====================
+ARMING_CHECK,1         # Full arming checks
+                       # Disable GPS check if GPS_TYPE=0
+# To bypass specific checks:
+# ARMING_CHECK,78      # All except GPS (bitmask)
+
+# ==================== Failsafe Configuration ====================
+FS_EKF_ACTION,1        # 1 = Land if EKF failsafe
+FS_EKF_THRESH,0.8      # EKF variance threshold (0.6-1.0)
+
+# ==================== Flight Modes ====================
+# Recommended modes for VIO testing
+FLTMODE1,0             # Stabilize
+FLTMODE2,2             # AltHold
+FLTMODE3,5             # Loiter (requires position)
+FLTMODE4,16            # PosHold
+FLTMODE5,3             # Auto
+FLTMODE6,6             # RTL
+
+# ==================== Position Hold Tuning ====================
+# Tune these for indoor flight
+WPNAV_SPEED,200        # Waypoint speed (cm/s) - reduce for indoor
+WPNAV_SPEED_DN,100     # Descent speed (cm/s)
+WPNAV_SPEED_UP,150     # Ascent speed (cm/s)
+WPNAV_ACCEL,100        # Acceleration (cm/s/s)
+WPNAV_RADIUS,50        # Waypoint acceptance radius (cm)
+
+LOIT_SPEED,500         # Loiter speed (cm/s)
+LOIT_ACC_MAX,250       # Loiter max acceleration (cm/s/s)
+LOIT_BRK_ACCEL,250     # Loiter brake acceleration
+LOIT_BRK_DELAY,1       # Loiter brake delay (s)
+
+# ==================== Serial Configuration ====================
+# Companion computer connection (adjust port as needed)
+SERIAL2_PROTOCOL,2     # MAVLink2
+SERIAL2_BAUD,921       # 921600 baud
+
+# ==================== System Configuration ====================
+SCHED_LOOP_RATE,400    # Scheduler rate (Hz)
+INS_GYRO_RATE,1        # 1 = 1kHz gyro rate
+
+# ==================== Logging ====================
+LOG_BITMASK,176126     # Standard logging
+LOG_FILE_DSRMROT,1     # New log on disarm
+LOG_REPLAY,1           # Enable replay logging for debugging
+
+# ==================== Notes ====================
+# 1. After loading, wait for EKF3 to converge (check EKF_STATUS)
+# 2. Verify VISION_POSITION_ESTIMATE messages are received
+# 3. Test in Stabilize mode first, then AltHold, then Loiter/PosHold
+# 4. Monitor EKF innovations in MAVProxy or QGC
+# 5. Re-tune VISO_DELAY_MS if latency changes

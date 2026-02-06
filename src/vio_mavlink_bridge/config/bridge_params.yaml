@@ -1,0 +1,52 @@
+# VIO-MAVLink Bridge Configuration
+# Holybro X500 GPS-Denied Indoor Autonomy
+# Author: Barath Kumar JK
+
+mavlink_bridge:
+  ros__parameters:
+    # ==================== Serial Port ====================
+    serial_port: "/dev/ttyACM0"    # Flight controller serial port
+    baudrate: 921600               # Baud rate (921600 recommended for low latency)
+    
+    # ==================== MAVLink IDs ====================
+    system_id: 1                   # MAVLink system ID (companion computer)
+    component_id: 197              # MAV_COMP_ID_VISUAL_INERTIAL_ODOMETRY
+    target_system: 1               # Target system ID (flight controller)
+    target_component: 1            # Target component ID (autopilot)
+    
+    # ==================== Topics ====================
+    vio_topic: "/camera/odom/sample"    # Input VIO odometry topic
+    odom_ned_topic: "/vio/odom_ned"     # Output NED odometry topic
+    
+    # ==================== Frame Configuration ====================
+    vio_frame: "camera_odom_frame"      # VIO output frame
+    body_frame: "base_link"             # Robot body frame
+    local_frame: "odom"                 # Local reference frame
+    use_ned: true                       # Convert to NED for ArduPilot
+    
+    # ==================== Timing ====================
+    publish_rate_hz: 30.0              # MAVLink message rate (Hz)
+    vision_delay_ms: 50                # Vision pipeline delay (ms)
+    # Note: Set VISO_DELAY_MS in ArduPilot to match this value
+    
+    # MAV_FRAME values:
+    # 0  = MAV_FRAME_GLOBAL
+    # 1  = MAV_FRAME_LOCAL_NED
+    # 21 = MAV_FRAME_LOCAL_FRD (recommended)
+    coordinate_frame: 21
+    
+    # ==================== Heartbeat ====================
+    heartbeat_rate_hz: 1.0             # Heartbeat message rate
+    status_rate_hz: 2.0                # Status logging rate
+    
+    # ==================== Covariance ====================
+    # Default covariance values if VIO doesn't provide them
+    default_position_cov: 0.01         # Position covariance (m^2)
+    default_orientation_cov: 0.001     # Orientation covariance (rad^2)
+    default_velocity_cov: 0.01         # Velocity covariance (m/s)^2
+    
+    # ==================== Reset Handling ====================
+    # Increment reset_counter when VIO resets/loses tracking
+    detect_vio_reset: true
+    reset_position_threshold: 1.0      # Position jump threshold (m)
+    reset_orientation_threshold: 0.5   # Orientation jump threshold (rad)

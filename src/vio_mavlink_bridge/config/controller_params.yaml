@@ -1,0 +1,67 @@
+# Sliding Mode Controller Configuration
+# Holybro X500 GPS-Denied Indoor Autonomy
+# Author: Barath Kumar JK
+
+sliding_mode_controller:
+  ros__parameters:
+    # ==================== Topics ====================
+    odom_topic: "/vio/odom_ned"
+    setpoint_topic: "/setpoint/pose"
+    
+    # ==================== Sliding Surface Parameters ====================
+    # λ (lambda) - defines the slope of the sliding surface
+    # Higher values = faster convergence but more aggressive
+    # s = e_dot + λ*e
+    lambda_x: 2.0
+    lambda_y: 2.0
+    lambda_z: 1.5    # Lower for vertical (more gentle)
+    
+    # ==================== Control Gains ====================
+    # k - switching control gain
+    # Higher values = stronger response to disturbances
+    k_x: 5.0
+    k_y: 5.0
+    k_z: 3.0
+    
+    # ==================== Boundary Layer ====================
+    # η (eta) - boundary layer thickness for chattering reduction
+    # Larger values = smoother control but less precision
+    # Use saturation function: sat(s/η)
+    eta_x: 0.1
+    eta_y: 0.1
+    eta_z: 0.15
+    
+    # ==================== Integral Gains (PI-SMC) ====================
+    # Optional integral action for steady-state error reduction
+    ki_x: 0.1
+    ki_y: 0.1
+    ki_z: 0.2
+    integral_limit: 2.0    # Anti-windup limit
+    
+    # ==================== Physical Parameters ====================
+    mass: 1.5              # Vehicle mass (kg)
+    gravity: 9.81          # Gravitational acceleration (m/s^2)
+    
+    # ==================== Control Limits ====================
+    max_thrust: 25.0       # Maximum thrust (N)
+    min_thrust: 0.0        # Minimum thrust (N) - for safety
+    max_tilt_angle: 0.5    # Maximum tilt angle (rad) ≈ 28°
+    max_velocity_xy: 2.0   # Maximum horizontal velocity (m/s)
+    max_velocity_z: 1.0    # Maximum vertical velocity (m/s)
+    max_acceleration: 5.0  # Maximum acceleration (m/s^2)
+    
+    # ==================== Control Settings ====================
+    control_rate_hz: 100.0         # Control loop frequency
+    use_attitude_control: true     # true = attitude setpoints, false = acceleration
+    enabled: false                 # Start disabled for safety
+    
+    # ==================== Timeouts ====================
+    odom_timeout_sec: 0.5          # Odometry timeout
+    setpoint_timeout_sec: 2.0      # Setpoint timeout (hold position if no setpoint)
+    
+    # ==================== Tuning Notes ====================
+    # 1. Start with low k values and increase gradually
+    # 2. Increase lambda for faster response, decrease for stability
+    # 3. Increase eta if chattering is observed
+    # 4. Set ki > 0 only if steady-state error is significant
+    # 5. Test with small position setpoints first
